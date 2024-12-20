@@ -1,0 +1,9 @@
+name: toycloud
+
+services:
+  webservice:
+    build: ./webservice
+  loadbalancer:
+    build: ./loadbalancer
+    ports:
+      - "8080:8080"
