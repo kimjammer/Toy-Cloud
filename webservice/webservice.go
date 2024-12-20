@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -14,5 +14,6 @@ func main() {
 }
 
 func ping(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, gin.H{"message": "pong"})
+	hostname, _ := os.Hostname()
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "pong from host: " + hostname})
 }

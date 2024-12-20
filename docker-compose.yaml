@@ -1,9 +1,14 @@
 name: toycloud
 
 services:
-  webservice:
+  webservice-1:
+    container_name: webservice-1
+    build: ./webservice
+  webservice-2:
+    container_name: webservice-2
     build: ./webservice
   loadbalancer:
+    container_name: loadbalancer-1
     build: ./loadbalancer
     ports:
       - "8080:8080"
