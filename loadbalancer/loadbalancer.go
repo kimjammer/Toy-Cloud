@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"kimjammer.com/toycloud/common"
@@ -21,28 +22,59 @@ type safeHostList struct {
 
 var registeredHosts = safeHostList{sl: make([]common.Host, 0)}
 
-// Returns a function that chooses hosts
-// Chooses hosts in a round robin style, rotating hosts
-func roundRobin() func() string {
+// Returns a function that chooses hosts.
+// Chooses hosts in a round-robin style, rotating hosts
+func roundRobin() func() (string, error) {
 	hostIndex := 0
-	registeredHosts.mu.Lock()
-	defer registeredHosts.mu.Unlock()
 
-	var chooser = func() string {
+	return func() (string, error) {
+		registeredHosts.mu.Lock()
+		defer registeredHosts.mu.Unlock()
+
 		numHosts := len(registeredHosts.sl)
+		if numHosts == 0 {
+			return "", errors.New("No available hosts")
+		}
+
 		if hostIndex < numHosts-1 {
 			hostIndex++
 		} else {
 			hostIndex = 0
 		}
-		return "http://" + registeredHosts.sl[hostIndex].Address + ":" + common.Port
+		return registeredHosts.sl[hostIndex].Address, nil
 	}
-	return chooser
+}
+
+// Returns a function that chooses hosts.
+// Chooses the host with the lowest load
+func lowestLoad() func() (string, error) {
+
+	return func() (string, error) {
+		registeredHosts.mu.Lock()
+		defer registeredHosts.mu.Unlock()
+
+		numHosts := len(registeredHosts.sl)
+		if numHosts == 0 {
+			return "", errors.New("No available hosts")
+		}
+
+		minLoadHost := registeredHosts.sl[0].Address
+		minLoad := registeredHosts.sl[0].Load
+		for _, host := range registeredHosts.sl {
+			fmt.Println("Host:", host.Address, "Load:", host.Load)
+			if host.Load < minLoad {
+				minLoadHost = host.Address
+				minLoad = host.Load
+			}
+		}
+
+		return minLoadHost, nil
+	}
 }
 
 var strategy = roundRobin()
 
-func getLoadBalancedHost() string {
+func getLoadBalancedHost() (string, error) {
 	return strategy()
 }
 
@@ -71,14 +103,21 @@ func main() {
 func handleRequest(c *gin.Context) {
 	//Resolve host address, change scheme and host for request
 	req := c.Request
-	proxy, err := url.Parse(getLoadBalancedHost())
+	host, err := getLoadBalancedHost()
+	if err != nil {
+		fmt.Println("Error in finding host:", err)
+		c.String(http.StatusInternalServerError, "error")
+		return
+	}
+
+	hosturl, err := url.Parse("http://" + host + ":" + common.Port)
 	if err != nil {
 		fmt.Println("Error in parsing host address:", err)
 		c.String(http.StatusInternalServerError, "error")
 		return
 	}
-	req.URL.Scheme = proxy.Scheme
-	req.URL.Host = proxy.Host
+	req.URL.Scheme = hosturl.Scheme
+	req.URL.Host = hosturl.Host
 
 	//Get actual request from host
 	transport := http.DefaultTransport
@@ -120,6 +159,11 @@ func getHosts() {
 	registeredHosts.mu.Lock()
 	defer registeredHosts.mu.Unlock()
 
+	prevNumHosts := len(registeredHosts.sl)
+
 	registeredHosts.sl = hostList.Hosts
-	fmt.Println("Num Hosts:", len(registeredHosts.sl))
+
+	if prevNumHosts != len(registeredHosts.sl) {
+		fmt.Println("Num Hosts:", len(registeredHosts.sl))
+	}
 }

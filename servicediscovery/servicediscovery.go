@@ -9,14 +9,15 @@ import (
 	"time"
 )
 
-const heartbeatInterval = 5
+const heartbeatInterval = 2
 
+// TODO: Probably is not concurrency safe
 var trackedHosts = map[string]common.Heartbeat{}
 
 func main() {
 	router := gin.Default()
 	router.POST("/newhost", registerNewHost)
-	router.GET("/hosts", getLiveHosts)
+	router.GET("/hosts", getLiveWebServices)
 
 	fmt.Println("Service Discovery")
 
@@ -41,8 +42,6 @@ func main() {
 var respChan = make(chan common.Heartbeat)
 
 func heartbeatHosts() {
-	fmt.Println("Starting heartbeat")
-
 	//Send heartbeats
 	for _, host := range trackedHosts {
 		go sendHeartbeat(host.Address)
@@ -68,8 +67,6 @@ func heartbeatHosts() {
 			trackedHosts[heartbeat.Address] = newHeartbeat
 		}
 	}
-	fmt.Println("Finished heartbeat")
-	fmt.Println(trackedHosts)
 }
 
 func sendHeartbeat(host string) {
@@ -118,12 +115,12 @@ func registerNewHost(c *gin.Context) {
 	}
 }
 
-// Return a list of current live hosts
-func getLiveHosts(c *gin.Context) {
+// Return a list of current live webservice hosts
+func getLiveWebServices(c *gin.Context) {
 	hostList := []common.Host{}
 
 	for _, host := range trackedHosts {
-		if host.Success {
+		if host.Success && host.ServiceType == common.WebService {
 			hostList = append(hostList, common.Host{host.Address, host.Load})
 		}
 	}

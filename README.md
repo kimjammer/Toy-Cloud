@@ -5,10 +5,10 @@ distributed computing services. Each folder contains a single
 service that can be a part of the overall architecture.
 
 - [x] Web Service (Dummy Service)
-- [ ] Load Balancer
+- [x] Load Balancer
   - [x] Round Robin
   - [x] Exclude Down Hosts
-  - [ ] Minimal Load
+  - [x] Minimal Load
 - [x] Service Discovery/Health Monitor
 - [ ] Container Orchestrator
 - [ ] Manual Scaler

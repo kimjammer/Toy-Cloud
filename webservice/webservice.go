@@ -8,14 +8,24 @@ import (
 	"kimjammer.com/toycloud/common"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
 const registrationRetryTime = 2
 
+type loadMetrics struct {
+	requests           int //Unused
+	processingDuration time.Duration
+	resetTime          time.Time
+	mu                 sync.Mutex
+}
+
+var load = loadMetrics{0, 0, time.Now(), sync.Mutex{}}
+
 func main() {
 	router := gin.Default()
-	router.GET("/ping", ping)
+	router.GET("/ping", hostLoadMiddleware(), ping)
 	router.GET("/heartbeat", handleHeartbeat)
 
 	//Register with service discovery
@@ -24,9 +34,31 @@ func main() {
 	router.Run(":" + common.Port)
 }
 
-// TODO: Implement measuring current load
+func hostLoadMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		load.mu.Lock()
+		defer load.mu.Unlock()
+		load.processingDuration += time.Since(start)
+		load.requests++
+	}
+}
+
+// Returns the percent of time spent handling requests since it was last read
+// Interval at which this is reset(read) depends on the heartbeat interval
 func crrLoad() float64 {
-	return 0
+	load.mu.Lock()
+	fmt.Println("ProcessingDuration:", load.processingDuration)
+	fmt.Println("Requests:", load.requests)
+	busyPercent := load.processingDuration.Seconds() / time.Since(load.resetTime).Seconds()
+	fmt.Println("BusyPercent:", busyPercent)
+	load.requests = 0
+	load.processingDuration = 0
+	load.resetTime = time.Now()
+	load.mu.Unlock()
+
+	return busyPercent
 }
 
 func ping(c *gin.Context) {
@@ -38,13 +70,14 @@ func ping(c *gin.Context) {
 }
 
 func handleHeartbeat(c *gin.Context) {
+	//Get hostname (works like IP)
 	hostname, err := os.Hostname()
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
+
 	heartbeat := common.Heartbeat{hostname, time.Now().Unix(), crrLoad(), true, common.WebService}
 	c.IndentedJSON(http.StatusOK, heartbeat)
-	fmt.Println("Heartbeat")
 }
 
 func registerService() {
