@@ -3,12 +3,23 @@ name: toycloud
 services:
   webservice-1:
     container_name: webservice-1
-    build: ./webservice
+    build:
+      context: ./
+      dockerfile: ./webservice/Dockerfile
   webservice-2:
     container_name: webservice-2
-    build: ./webservice
+    build:
+      context: ./
+      dockerfile: ./webservice/Dockerfile
   loadbalancer:
     container_name: loadbalancer-1
-    build: ./loadbalancer
+    build:
+      context: ./
+      dockerfile: ./loadbalancer/Dockerfile
     ports:
       - "8080:8080"
+  servicediscovery:
+    container_name: servicediscovery
+    build:
+      context: ./
+      dockerfile: ./servicediscovery/Dockerfile

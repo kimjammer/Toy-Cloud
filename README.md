@@ -7,9 +7,9 @@ service that can be a part of the overall architecture.
 - [x] Web Service (Dummy Service)
 - [ ] Load Balancer
   - [x] Round Robin
-  - [ ] Exclude Down Hosts
+  - [x] Exclude Down Hosts
   - [ ] Minimal Load
-- [ ] Service Discovery/Health Monitor
+- [x] Service Discovery/Health Monitor
 - [ ] Container Orchestrator
 - [ ] Manual Scaler
 - [ ] Auto Scaler
@@ -26,3 +26,8 @@ other.
 Each server is uniquely identified by its ip address, but since
 this is docker, we just use the container name to identify and
 connect to each server.
+
+## Building
+
+All docker containers must be built with the context set to the
+parent (this) directory. Docker compose handles this already.

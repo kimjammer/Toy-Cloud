@@ -1,4 +1,4 @@
-module kimjammer.com/toycloud/webservice
+module kimjammer.com/toycloud/servicediscovery
 
 go 1.23.4
 
