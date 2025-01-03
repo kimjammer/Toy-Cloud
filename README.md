@@ -10,7 +10,7 @@ service that can be a part of the overall architecture.
   - [x] Exclude Down Hosts
   - [x] Minimal Load
 - [x] Service Discovery/Health Monitor
-- [ ] Container Orchestrator
+- [x] Container Orchestrator
 - [ ] Manual Scaler
 - [ ] Auto Scaler
 - [ ] Dashboard
@@ -31,3 +31,7 @@ connect to each server.
 
 All docker containers must be built with the context set to the
 parent (this) directory. Docker compose handles this already.
+
+To orchestrate containers, the orchestrator container has access
+to the docker socket. This is equivalent to giving the container
+root access to your system.

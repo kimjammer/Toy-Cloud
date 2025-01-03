@@ -1,16 +1,13 @@
 name: toycloud
 
 services:
-  webservice-1:
-    container_name: webservice-1
+  webservice:
     build:
       context: ./
       dockerfile: ./webservice/Dockerfile
-  webservice-2:
-    container_name: webservice-2
-    build:
-      context: ./
-      dockerfile: ./webservice/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 2
   loadbalancer:
     container_name: loadbalancer-1
     build:
@@ -23,3 +20,10 @@ services:
     build:
       context: ./
       dockerfile: ./servicediscovery/Dockerfile
+  orchestrator:
+    container_name: orchestrator
+    build:
+      context: ./
+      dockerfile: ./orchestrator/Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

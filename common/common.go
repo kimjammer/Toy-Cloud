@@ -27,3 +27,25 @@ type Host struct {
 type HostList struct {
 	Hosts []Host
 }
+
+type StartContainerCommand struct {
+	Image string
+}
+
+type StopContainerCommand struct {
+	ID string
+}
+
+type DockerStatus struct {
+	Containers []ContainerStatus
+}
+
+type ContainerStatus struct {
+	ContainerID string
+	Image       string
+	Command     string
+	Created     string
+	Status      string
+	Ports       string
+	Names       string
+}
